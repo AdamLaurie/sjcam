@@ -82,7 +82,7 @@ Parameter names and values are translated to a keyword format that is easy to cu
 
 # setting camera parameters
 
-Changeable parameters can be set using the SET command, followed by parameter name and value. To get a full list of paramaters and values, use:
+Changeable parameters can be set using the SET command, followed by parameter name and value. To get a full list of parameters and values, use:
 
   sjcam set ? ?
 
