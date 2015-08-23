@@ -126,6 +126,38 @@ To change a parameter, specify the parameter name and new value:
     Setting Photo_Image_Size to 2MHD_1920x1080
       OK
 
+# special parameters
+
+There are two 'parameters' that are actually executable functions: Format and Default_Setting.
+
+Format will wipe the SD card and Default_Setting will set all parameters back to defaults.
+
+There is no 'are you sure?' prompt, so running the command:
+
+  sjcam set format ?
+
+    SET config help:
+
+      Format: Cancel, OK
+
+shows the options, and:
+
+  sjcam set format ok
+
+    Setting format to ok
+      OK
+
+will immediately wipe your SD card. Use with caution!
+
+  sjcam dir
+
+    Camera directory:
+
+      PHOTO:
+
+
+      MOVIE:
+
 # known issues / further development
 
 Since there is no published API for this type of camera, it was reverse engineered by sniffing packets from the Android app. Not all settings visible on the camera can be changed from the app, so some things are still unknown or may be incorrect.
