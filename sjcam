@@ -21,6 +21,7 @@ if len(sys.argv) == 1:
 	print
 	print '     CONFIG                                 Show camera config and status'
 	print '     DATE <YYYY-MM-DD>                      Set camera date'
+	print '     DEBUG <OFF | ON>                       Set DEBUG printing'
 	print '     DIR                                    Show PHOTO and MOVIE directory listing'
 	print '     GET <FILE>                             Copy file from camera to local storage'
 	print '     IP <ADDRESS>                           Set IP address (default 192.168.1.254)'
@@ -66,6 +67,21 @@ while current < len(sys.argv):
 		current += 1
 		continue
 		
+	if command == 'DEBUG':
+		current += 1
+		arg= sys.argv[current].upper()
+		print '  Setting DEBUG to', arg
+		if arg == 'ON':
+			camera.DEBUG= True
+		elif arg == 'OFF':
+			camera.DEBUG= False
+		else:
+			print '    Failed! Invalid setting:', arg
+			exit(True)
+		print '    OK'
+		current += 1
+		continue
+
 	if command == 'DIR':
 		print '  Camera directory:'
 		camera.print_directory()

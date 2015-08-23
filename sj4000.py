@@ -181,9 +181,12 @@ class camera:
 			full_command += '&par=' + param
 		if str_param:
 			full_command += '&str=' + str_param
-		#print 'sending:', full_command
+		if self.DEBUG:
+			print 'DEBUG: >>>', full_command
 		try:
 			resp= requests.get(full_command, timeout= 5)
+			if self.DEBUG:
+				print 'DEBUG: <<<', resp
 		except:
 			return False, 'Timeout!'
 		if resp.status_code == 200:

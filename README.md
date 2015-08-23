@@ -28,6 +28,7 @@ Running the script with no arguments will show a help screen:
 
        CONFIG                                 Show camera config and status
        DATE <YYYY-MM-DD>                      Set camera date
+       DEBUG <OFF | ON>                       Set DEBUG printing'
        DIR                                    Show PHOTO and MOVIE directory listing
        GET <FILE>                             Copy file from camera to local storage
        IP <ADDRESS>                           Set IP address (default 192.168.1.254)
