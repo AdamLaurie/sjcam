@@ -21,6 +21,8 @@ import subprocess
 # 3002 lists what appears to be a bunch of other commands - need to explore!
 # http://192.168.1.254/?custom=1&cmd=1003 - returns number -e.g. 4694 - what is it?
 # find a way to read current wifi name and password
+# what does camera mode 2 do?
+# what is data from cmd 3019?
 
 class camera:
 	DEBUG= False
@@ -28,6 +30,8 @@ class camera:
 	DEVNULL= None
 	MODE_PHOTO= '0'
 	MODE_MOVIE= '1'
+	MODE_TPHOTO= '4'
+	MODE_TMOVIE= '3'
 	START= '1'
 	STOP= '0'
 	# config commands with configurable parameters
@@ -236,14 +240,20 @@ class camera:
 				return ret, info
 			switch= self.MODE_PHOTO
 		elif mode == 'TPHOTO':
-			return False, 'Not yet implemented'
+			ret, info= self.send_command('MODE_PHOTO_MOVIE', param= self.MODE_TPHOTO)
+			if not ret:
+				return ret, info
+			switch= self.MODE_TPHOTO
 		elif mode == 'MOVIE':
 			ret, info= self.send_command('MODE_PHOTO_MOVIE', param= self.MODE_MOVIE)
 			if not ret:
 				return ret, info
 			switch= self.MODE_MOVIE
 		elif mode == 'TMOVIE':
-			return False, 'Not yet implemented'
+			ret, info= self.send_command('MODE_PHOTO_MOVIE', param= self.MODE_TMOVIE)
+			if not ret:
+				return ret, info
+			switch= self.MODE_TMOVIE
 		else:
 			return False, 'Unrecognised MODE'
 		# wait for mode switch

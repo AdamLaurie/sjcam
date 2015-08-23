@@ -33,7 +33,7 @@ if len(sys.argv) == 1:
 	print '     PREVIEW                                View low-res PHOTO preview image (auto switch to PHOTO mode)'
 	print "     SET <PARAMETER> <VALUE>                Set camera config ('?' to list parameters and/or values)"
 	print '     START                                  START MOVIE recording (auto switch to MOVIE mode)'
-	print '     STOP                                   STOP MOVIE recording'
+	print '     STOP                                   STOP MOVIE recording or TIMED PHOTO'
 	print '     SYNC                                   Synchronise camera clock & date with host'
 	print '     [G|V]SNAP                              Take a snapshot and optionally [V]iew and/or [G]et it (auto switch to PHOTO mode)'
 	print '     SSID <SSID>                            Set WiFi SSID (will not take effect until disconnect/reconnect)'
@@ -223,7 +223,7 @@ while current < len(sys.argv):
 		if not stat:
 			print '    Failed!', info
 			exit(True)
-		if info != camera.MODE_PHOTO:
+		if info != camera.MODE_PHOTO and info != camera.MODE_TPHOTO:
 			print '    Setting PHOTO mode'
 	                stat, info= camera.set_mode('PHOTO')
         	        if not stat:
@@ -263,11 +263,11 @@ while current < len(sys.argv):
 		
 	if command == 'START':
 		print '  Starting MOVIE recording'
-		stat, info= camera.get_mode()
+		stat, mode= camera.get_mode()
 		if not stat:
 			print '    Failed!', info
 			exit(True)
-		if info != camera.MODE_MOVIE:
+		if mode != camera.MODE_MOVIE and mode != camera.MODE_TMOVIE:
 			print '    Setting MOVIE mode'
 			stat, info= camera.set_mode('MOVIE')
 			if not stat:
@@ -284,13 +284,24 @@ while current < len(sys.argv):
 		continue
 
 	if command == 'STOP':
-		print '  Stopping MOVIE recording'
-		stat, info= camera.start_stop_movie(camera.STOP)
-		if stat:
-			print '    OK'
+		stat, mode= camera.get_mode()
+		if not stat:
+			print '  STOP failed!', mode
+		if mode == camera.MODE_TPHOTO:
+			print '  Stopping TIMED PHOTO'
+			stat, fname= camera.snap(None)
+			if not stat:
+				print '    Failed!', fname
+				exit(True)
+			print '    Last image captured:', fname
 		else:
-			print '    Failed!', info
-			exit(True)
+			print '  Stopping MOVIE recording'
+			stat, info= camera.start_stop_movie(camera.STOP)
+			if stat:
+				print '    OK'
+			else:
+				print '    Failed!', info
+				exit(True)
 		current += 1
 		continue
 
