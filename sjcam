@@ -1,0 +1,268 @@
+#! /usr/bin/env python
+
+#  sjcam - SJCAM WiFi Camera CLI utility - control SJCAM sports cameras over WiFi connection
+# 
+#  Adam Laurie <adam@algroup.co.uk>
+# 
+#  This code is copyright (c) Adam Laurie 2015, All rights reserved.
+#
+
+import sys
+import sj4000
+import subprocess
+import os
+from datetime import datetime
+
+if len(sys.argv) == 1:
+	print
+	print 'Usage: %s <COMMAND> [ARG(s)] [<COMMAND> [ARG(s)] ...]' % sys.argv[0]
+	print
+	print '  Commands:'
+	print
+	print '     CONFIG                                 Show camera config and status'
+	print '     DATE <YYYY-MM-DD>                      Set camera date'
+	print '     DIR                                    Show PHOTO and MOVIE directory listing'
+	print '     GET <FILE>                             Copy file from camera to local storage'
+	print '     IP <ADDRESS>                           Set IP address (default 192.168.1.254)'
+	print '     MODE <[T]MOVIE | [T]PHOTO>             Set camera to [TIMED] MOVIE or PHOTO mode'
+	print '     PASS <PASSWORD>                        Set WiFi PASSWORD (will not take effect until disconnect/reconnect)'
+	print '     PATH <FILE PATH>                       Set PATH for saving snapshots (default ./)'
+	print '     PING                                   Check camera is visible and connectable on network'		
+	print "     SET <PARAMETER> <VALUE>                Set camera config ('?' to list parameters and/or values)"
+	print '     SYNC                                   Synchronise camera clock & date with host'
+	print '     [G|V]SNAP                              Take a snapshot and optionally [V]iew and/or [G]et it (auto switch to PHOTO mode)'
+	print '     SSID <SSID>                            Set WiFi SSID (will not take effect until disconnect/reconnect)'
+	print '     STREAM                                 View live video stream (auto switch to MOVIE mode)'
+	print '     TIME <HH:MM:SS>                        Set camera clock'
+	print
+	print '  Commands will be executed sequentially and must be combined as appropriate.'
+	print
+	exit(True)
+
+camera= sj4000.camera()
+current= 1
+filepath= './'
+DEVNULL= None
+
+while current < len(sys.argv):
+	print
+	command= sys.argv[current].upper()
+	if command == 'CONFIG':
+		print '  Camera config:'
+		camera.print_config()
+		current += 1
+		continue
+
+	if command == 'DATE':
+		current += 1
+		print '  Setting DATE to', sys.argv[current]
+		stat, info= camera.set_date(sys.argv[current])
+		if not stat:
+			print '    Failed!', info
+			exit(True)
+		print '    OK'
+		current += 1
+		continue
+		
+	if command == 'DIR':
+		print '  Camera directory:'
+		camera.print_directory()
+		current += 1
+		continue
+
+	if command == 'GET':
+		current += 1
+		print '  Getting', sys.argv[current]
+		stat, fname= camera.get_file(filepath, sys.argv[current])
+		if stat:
+			print '    Saved to:', filepath + fname
+		else:
+			print '    Failed!', fname
+			exit(True)
+		current += 1
+		continue
+
+	if command == 'IP':
+		current += 1
+		print '  Set IP to:',
+		try:
+			camera.ip= sys.argv[current]
+		except:
+			print 'Failed! Missing IP ADDRESS.'
+			exit(True)
+		print camera.ip
+		current += 1
+		continue
+
+	if command == 'MODE':
+		print '  Setting MODE:',
+		current += 1
+		try:
+			mode= sys.argv[current].upper()
+		except:
+			print 'Failed! Missing MODE.'
+			exit(True)
+		print mode
+		stat, info= camera.set_mode(mode)
+		if not stat:
+			print '    Failed!', info
+			exit(True)
+		print '    OK'
+		current += 1
+		continue
+
+	if command == 'PASS':
+		current += 1
+		print '  Setting PASSWORD to', sys.argv[current]
+		if len(sys.argv[current]) < 8:
+			print '    Failed! PASSWORD must be at least 8 characters'
+			exit(True)
+		stat, info= camera.set_wifi_pw(sys.argv[current])
+		if not stat:
+			print '    Failed!', info
+			exit(True)
+		print '    OK'
+		current += 1
+		continue
+		
+	if command == 'PATH':
+		current += 1
+		print '  Setting PATH to', sys.argv[current]
+		filepath= sys.argv[current]
+		current += 1
+		continue
+
+	if command == 'PING':
+		print '  Sending network PING to', camera.ip
+		print '   ', camera.ping()
+		print
+		print '  Testing HTTP socket on', camera.ip
+		print '   ', camera.http_test()
+		current += 1
+		continue
+
+	if command == 'SET':
+		current += 1
+		try:
+			if sys.argv[current] == '?':
+				param= None
+			else:
+				param= sys.argv[current]
+			current += 1
+			if sys.argv[current] == '?':
+				val= None
+			else:
+				val= sys.argv[current]
+		except:
+			print '    Missing argument(s) to SET!'
+			exit(True)
+		if not param or not val:
+			print '  SET config help:'
+			print
+			camera.print_config_help(param)
+		else:
+			print '  Setting', param, 'to', val
+			stat, info= camera.set_config(param, val)
+			if not stat:
+				print '    Failed!', info
+				exit(True)
+			print '    OK'
+		current += 1
+		continue
+
+	if command == 'VGSNAP' or command == 'GVSNAP':
+		command= 'VSNAP'
+	if command == 'SNAP' or command == 'GSNAP' or command == 'VSNAP':
+		print '  Taking snapshot'
+		stat, info= camera.get_mode()
+		if not stat:
+			print '    Failed!', info
+			exit(True)
+		if info != camera.MODE_PHOTO:
+			print '    Setting PHOTO mode'
+	                stat, info= camera.set_mode('PHOTO')
+        	        if not stat:
+                	        print '      Failed!', info
+                        	exit(True)
+			print '      OK'
+		if command == 'GSNAP' or command == 'VSNAP':
+			stat, fname= camera.snap(filepath)
+		else:
+			stat, fname= camera.snap(None)
+		if not stat:
+			print '    Failed!', fname
+			exit(True)
+		print '    Image captured:', fname
+		if command == 'GSNAP' or command == 'VSNAP':
+			print '      Saved to:', filepath + fname
+		if command == 'VSNAP': 
+			print '      Viewing image'
+			if not DEVNULL:
+				DEVNULL= open(os.devnull, 'wb')
+			subprocess.Popen(['xview', '-shrink', filepath + fname], stdout= DEVNULL, stderr= subprocess.STDOUT)
+		current += 1
+		continue
+
+	if command == 'SSID':
+		current += 1
+		print '  Setting SSID to', sys.argv[current]
+		stat, info= camera.set_wifi_name(sys.argv[current])
+		if not stat:
+			print '    Failed!', info
+			exit(True)
+		print '    OK'
+		current += 1
+		continue
+		
+	if command == 'STREAM':
+		print '  Initiating video stream'
+		stat, info= camera.get_mode()
+		if not stat:
+			print '    Failed!', info
+			exit(True)
+		if info != camera.MODE_MOVIE:
+			print '    Setting MOVIE mode'
+	                stat, info= camera.set_mode('MOVIE')
+        	        if not stat:
+                	        print '      Failed!', info
+                        	exit(True)
+			print '      OK'
+		camera.stream()
+		current += 1
+		continue
+
+	if command == 'SYNC':
+		now= datetime.now().isoformat(' ')
+		date= now.split(' ')[0]
+		print '  Setting DATE to', date
+		stat, info= camera.set_date(date)
+		if not stat:
+			print '    Failed!', info
+			exit(True)
+		print '    OK'
+		time= now.split(' ')[1].split('.')[0]
+		print '  Setting TIME to', time
+		stat, info= camera.set_time(time)
+		if not stat:
+			print '    Failed!', info
+			exit(True)
+		print '    OK'
+		current += 1
+		continue
+
+	if command == 'TIME':
+		current += 1
+		print '  Setting TIME to', sys.argv[current]
+		stat, info= camera.set_time(sys.argv[current])
+		if not stat:
+			print '    Failed!', info
+			exit(True)
+		print '    OK'
+		current += 1
+		continue
+		
+	print
+	print 'Unrecognised command:', sys.argv[current]
+	exit(True)
+print
+exit(False)
