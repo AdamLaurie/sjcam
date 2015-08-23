@@ -36,6 +36,8 @@ Running the script with no arguments will show a help screen:
        PATH <FILE PATH>                       Set PATH for saving snapshots (default ./)
        PING                                   Check camera is visible and connectable on network
        SET <PARAMETER> <VALUE>                Set camera config ('?' to list parameters and/or values)
+       START                                  START MOVIE recording (auto switch to MOVIE mode)
+       STOP                                   STOP MOVIE recording
        SYNC                                   Synchronise camera clock & date with host
        [G|V]SNAP                              Take a snapshot and optionally [V]iew and/or [G]et it (auto switch to PHOTO mode)
        SSID <SSID>                            Set WiFi SSID (will not take effect until disconnect/reconnect)
