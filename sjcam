@@ -29,6 +29,8 @@ if len(sys.argv) == 1:
 	print '     PATH <FILE PATH>                       Set PATH for saving snapshots (default ./)'
 	print '     PING                                   Check camera is visible and connectable on network'		
 	print "     SET <PARAMETER> <VALUE>                Set camera config ('?' to list parameters and/or values)"
+	print '     START                                  START MOVIE recording (auto switch to MOVIE mode)'
+	print '     STOP                                   STOP MOVIE recording'
 	print '     SYNC                                   Synchronise camera clock & date with host'
 	print '     [G|V]SNAP                              Take a snapshot and optionally [V]iew and/or [G]et it (auto switch to PHOTO mode)'
 	print '     SSID <SSID>                            Set WiFi SSID (will not take effect until disconnect/reconnect)'
@@ -214,6 +216,39 @@ while current < len(sys.argv):
 		current += 1
 		continue
 		
+	if command == 'START':
+		print '  Starting MOVIE recording'
+		stat, info= camera.get_mode()
+		if not stat:
+			print '    Failed!', info
+			exit(True)
+		if info != camera.MODE_MOVIE:
+			print '    Setting MOVIE mode'
+			stat, info= camera.set_mode('MOVIE')
+			if not stat:
+				print '      Failed!', info
+				exit(True)
+			print '      OK'
+		stat, info= camera.start_stop_movie(camera.START)
+		if stat:
+			print '    OK'
+		else:
+			print '    Failed!', info
+			exit(True)
+		current += 1
+		continue
+
+	if command == 'STOP':
+		print '  Stopping MOVIE recording'
+		stat, info= camera.start_stop_movie(camera.STOP)
+		if stat:
+			print '    OK'
+		else:
+			print '    Failed!', info
+			exit(True)
+		current += 1
+		continue
+
 	if command == 'STREAM':
 		print '  Initiating video stream'
 		stat, info= camera.get_mode()

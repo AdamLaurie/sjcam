@@ -22,7 +22,7 @@ Running the script with no arguments will show a help screen:
 
   sjcam
 
-  Usage: /usr/local/bin/sjcam <COMMAND> [ARG(s)] [<COMMAND> [ARG(s)] ...]
+  Usage: /usr/local/bin/sjcam &gt;COMMAND&lt; [ARG(s)] [&gt;COMMAND&lt [ARG(s)] ...]
 
     Commands:
 
@@ -144,7 +144,7 @@ If you find any new or useful commands, please email me datails, or send me a pu
 
 At some point, it would be nice to have a GUI.
 
-Need to add video start/stop...
+Need to add GET option to video start/stop...
 
 Need to fix camera directory to show file sizes, dates etc. (strange problem with BS4)
 

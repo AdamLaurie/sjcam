@@ -18,10 +18,9 @@ import subprocess
 
 # todo:
 # command 3027 gets random number? - e.g. returns <Value>89770999</Value>
-# set wifi name/passwd - use 'str'
-# 3002 lists a bunch of commands
-# http://192.168.1.254/?custom=1&cmd=1003 - returns number -e.g. 4694
-
+# 3002 lists what appears to be a bunch of other commands - need to explore!
+# http://192.168.1.254/?custom=1&cmd=1003 - returns number -e.g. 4694 - what is it?
+# find a way to read current wifi name and password
 
 class camera:
 	DEBUG= False
@@ -29,16 +28,16 @@ class camera:
 	DEVNULL= None
 	MODE_PHOTO= '0'
 	MODE_MOVIE= '1'
+	START= '1'
+	STOP= '0'
 	# config commands with configurable parameters
 	CONFIG=		{
 			'1002':['Photo_Image_Size', '12M_4032x3024', '10M_3648x2736', '8M_3264x2448', '5M_2592x1944', '3M_2048x1536', '2MHD_1920x1080', 'VGA_640x480', '1.3M_1280x960'],
-			#'1005':['Quality', 'Fine', 'Normal', 'Economy'],
 			'1006':['Sharpness', 'Strong', 'Normal', 'Soft'],
 			'1007':['White_Balance', 'Auto', 'Daylight', 'Cloudy', 'Tungsten', 'Flourescent'],
 			'1008':['Colour', 'Colour', 'B/W', 'Sepia'],
 			'1009':['ISO', 'Auto', '100', '200', '400'],
 			'1011':['Anti_Shaking', 'Off', 'On'],
-			#'1012':['Capture_Mode', 'Single', '3S_Timer', '5S_Timer', '10S_Timer', '20S_Timer'],
 			'2002':['Movie_Resolution', '1080FHD_1920x1080', '720P_1280x720_60fps', '720P_1280x720_30fps', 'WVGA_848x480', 'VGA_640x480'],
 			'2003':['Cyclic_Record', 'Off', '3_Minutes', '5_Minutes', '10_Minutes'],
 			'2004':['HDR/WDR', 'Off', 'On'],
@@ -60,6 +59,7 @@ class camera:
 			'DATE':'3005',
 			'MODE_PHOTO_MOVIE':'3001',
 			'SNAP':'1001',
+			'START_STOP':'2001',
 			'STATUS_MODE':'3016',
 			'TIME':'3006',
 			'WIFI_NAME':'3003',
@@ -260,6 +260,9 @@ class camera:
 		if path:
 			return self.get_file(path, f)
 		return True, fname
+
+	def start_stop_movie(self, action):
+		return self.send_command('START_STOP', param= action)
 
 	def stream(self):
 		if not self.DEVNULL:
