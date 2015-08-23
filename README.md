@@ -22,7 +22,7 @@ Running the script with no arguments will show a help screen:
 
   sjcam
 
-  Usage: /usr/local/bin/sjcam &gt;COMMAND&lt; [ARG(s)] [&gt;COMMAND&lt [ARG(s)] ...]
+  Usage: /usr/local/bin/sjcam &lt;COMMAND&gt; [ARG(s)] [&lt;COMMAND&gt; [ARG(s)] ...]
 
     Commands:
 
