@@ -7,5 +7,5 @@ setup  (name        = 'sjcam',
         author_email = 'adam@algroup.co.uk',
 	url='https://github.com/AdamLaurie/sjcam',
         scripts = ['sjcam', 'sj4000.py'],
-	install_requires = [ 'beautifulsoup4', 'requests', 'lxml' ]
+	install_requires = [ 'beautifulsoup4', 'requests', 'lxml', 'numpy', 'cv2' ]
        )

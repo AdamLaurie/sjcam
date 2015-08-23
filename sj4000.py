@@ -88,6 +88,24 @@ class camera:
 		else:
 			return False, info
 
+	# not sure what's going on here, but we seem to be able to grab a low res image
+	# when in PHOTO mode
+	def get_preview(self):
+		r= requests.get('http://' + self.ip + ':8192/', stream=True)
+		if not r.raw.readline().strip() == "--arflebarfle":
+			return False, 'Preview image not found!'
+		size= 0
+		# 4 lines of header including blank
+		for x in range(3):
+			header= r.raw.readline()
+			if header.startswith('Content-length:'):
+				size= int(header.split(' ')[1])
+		if not size:
+			return False, 'Could not determine image size!'
+		data= r.raw.read(size)
+		r.close()
+		return True, data
+
 	# extract a single status value from response to 'send_command'
 	def get_status(self, response):
 		tree= ElementTree.fromstring(response.text)

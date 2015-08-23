@@ -9,9 +9,10 @@
 
 import sys
 import sj4000
-import subprocess
 import os
 from datetime import datetime
+import cv2
+import numpy
 
 if len(sys.argv) == 1:
 	print
@@ -27,8 +28,9 @@ if len(sys.argv) == 1:
 	print '     IP <ADDRESS>                           Set IP address (default 192.168.1.254)'
 	print '     MODE <[T]MOVIE | [T]PHOTO>             Set camera to [TIMED] MOVIE or PHOTO mode'
 	print '     PASS <PASSWORD>                        Set WiFi PASSWORD (will not take effect until disconnect/reconnect)'
-	print '     PATH <FILE PATH>                       Set PATH for saving snapshots (default ./)'
+	print '     PATH <FILE PATH>                       Set PATH for saving snapshots and movies (default ./)'
 	print '     PING                                   Check camera is visible and connectable on network'		
+	print '     PREVIEW                                View low-res PHOTO preview image (auto switch to PHOTO mode)'
 	print "     SET <PARAMETER> <VALUE>                Set camera config ('?' to list parameters and/or values)"
 	print '     START                                  START MOVIE recording (auto switch to MOVIE mode)'
 	print '     STOP                                   STOP MOVIE recording'
@@ -45,7 +47,6 @@ if len(sys.argv) == 1:
 camera= sj4000.camera()
 current= 1
 filepath= './'
-DEVNULL= None
 
 while current < len(sys.argv):
 	print
@@ -159,6 +160,32 @@ while current < len(sys.argv):
 		current += 1
 		continue
 
+	if command == 'PREVIEW':
+		print '  Getting PREVIEW image'
+		stat, info= camera.get_mode()
+		if not stat:
+			print '    Failed!', info
+			exit(True)
+		if info != camera.MODE_PHOTO:
+			print '    Setting PHOTO mode'
+			stat, info= camera.set_mode('PHOTO')
+			if not stat:
+				print '      Failed!', info
+				exit(True)
+			print '      OK'
+		stat, data= camera.get_preview()
+		if not stat:
+			print '    Failed!', data
+		print '      Viewing preview - hit any key in image window to close'
+		nparray= numpy.fromstring(data, numpy.uint8)
+		preview= cv2.imdecode(nparray, cv2.CV_LOAD_IMAGE_UNCHANGED)
+		cv2.namedWindow('Preview', cv2.WINDOW_NORMAL)
+		cv2.imshow('Preview', preview)
+		cv2.waitKey(0)
+		cv2.destroyAllWindows()
+		current += 1
+		continue
+
 	if command == 'SET':
 		current += 1
 		try:
@@ -214,10 +241,12 @@ while current < len(sys.argv):
 		if command == 'GSNAP' or command == 'VSNAP':
 			print '      Saved to:', filepath + fname
 		if command == 'VSNAP': 
-			print '      Viewing image'
-			if not DEVNULL:
-				DEVNULL= open(os.devnull, 'wb')
-			subprocess.Popen(['xview', '-shrink', filepath + fname], stdout= DEVNULL, stderr= subprocess.STDOUT)
+			print '      Viewing image - hit any key in image window to close'
+			snap= cv2.imread(filepath + fname)
+			cv2.namedWindow('Snapshot %s' % fname, cv2.WINDOW_NORMAL)
+			cv2.imshow('Snapshot %s' % fname, snap)
+			cv2.waitKey(0)
+			cv2.destroyAllWindows()
 		current += 1
 		continue
 

@@ -28,14 +28,15 @@ Running the script with no arguments will show a help screen:
 
        CONFIG                                 Show camera config and status
        DATE <YYYY-MM-DD>                      Set camera date
-       DEBUG <OFF | ON>                       Set DEBUG printing'
+       DEBUG <OFF | ON>                       Set DEBUG printing
        DIR                                    Show PHOTO and MOVIE directory listing
        GET <FILE>                             Copy file from camera to local storage
        IP <ADDRESS>                           Set IP address (default 192.168.1.254)
        MODE <[T]MOVIE | [T]PHOTO>             Set camera to [TIMED] MOVIE or PHOTO mode
        PASS <PASSWORD>                        Set WiFi PASSWORD (will not take effect until disconnect/reconnect)
-       PATH <FILE PATH>                       Set PATH for saving snapshots (default ./)
+       PATH <FILE PATH>                       Set PATH for saving snapshots and movies (default ./)
        PING                                   Check camera is visible and connectable on network
+       PREVIEW                                View low-res PHOTO preview image (auto switch to PHOTO mode)
        SET <PARAMETER> <VALUE>                Set camera config ('?' to list parameters and/or values)
        START                                  START MOVIE recording (auto switch to MOVIE mode)
        STOP                                   STOP MOVIE recording
