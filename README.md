@@ -14,7 +14,7 @@ For other ditros, visit the home page for more info:
 
 To install sjcam:
 
-  sudo python ./setup.py -install
+  sudo python ./setup.py install
 
 # usage
 
@@ -78,7 +78,7 @@ Most commands are self explanatory.
       3004: 0
       Language: English
 
-Parameter names and values are translated to a keyword format that is easy to cut & paste for SET commands. Parameters that have not yet reverse engineered or cannot be changed using the SET command are shown as their original numeric value.
+Parameter names and values are translated to a keyword format that is easy to cut & paste for SET commands. Parameters that have not yet been reverse engineered or cannot be changed using the SET command are shown as their original numeric value.
 
 # setting camera parameters
 
