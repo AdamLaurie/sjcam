@@ -13,6 +13,7 @@ import os
 from datetime import datetime
 import cv2
 import numpy
+import copy
 
 if len(sys.argv) == 1:
 	print
@@ -20,6 +21,7 @@ if len(sys.argv) == 1:
 	print
 	print '  Commands:'
 	print
+	print '     BLAM                                   BlamCam mode - detect bullet hits on target (auto switch to PHOTO mode)'
 	print '     CONFIG                                 Show camera config and status'
 	print '     DATE <YYYY-MM-DD>                      Set camera date'
 	print '     DEBUG <OFF | ON>                       Set DEBUG printing'
@@ -51,9 +53,77 @@ filepath= './'
 while current < len(sys.argv):
 	print
 	command= sys.argv[current].upper()
+
+	if command == 'BLAM':
+		print '  Entering BlamCam mode'
+		stat, info= camera.get_mode()
+		if not stat:
+			print '    Failed!', info
+			exit(True)
+		if info != camera.MODE_PHOTO:
+			print '    Setting PHOTO mode'
+			stat, info= camera.set_mode('PHOTO')
+			if not stat:
+				print '      Failed!', info
+				exit(True)
+			print '      OK'
+		print '      Viewing target - hit any key in image window after each shot (Q to quit)'
+		sequence= 0
+		prev= None
+		cdiff= None
+		diff= None
+		combined= None
+		#cv2.namedWindow('All Shots', cv2.WINDOW_NORMAL)
+		#cv2.namedWindow('Last Shot', cv2.WINDOW_NORMAL)
+		cv2.namedWindow('This Shot', cv2.WINDOW_NORMAL)
+		#cv2.namedWindow('debug', cv2.WINDOW_NORMAL)
+		while 42:
+			stat, fname= camera.snap(filepath)
+			if not stat:
+				print '    Failed!', data
+				exit(True)
+			snap= cv2.imread(filepath + fname)
+			snap= cv2.resize(snap, (480,640))
+			cv2.namedWindow('Shot %02d' % sequence, cv2.WINDOW_NORMAL)
+			cv2.imshow('Shot %02d' % sequence, snap)
+			if prev != None:
+				diff= cv2.subtract(prev, snap)
+				# remove noise
+				diff= cv2.medianBlur(diff, 9)
+				# convert to greyscale so we can apply threshold
+				diff= cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+				# apply threshold so we have a b&w image we can use as a mask
+                                diff= cv2.threshold(diff, 10, 255, cv2.THRESH_BINARY)[1]
+				#cv2.imshow('Last Shot', diff)
+				if cdiff == None:
+					cdiff= copy.copy(diff)
+					# create a solid red image of the same size as original to be used for highlighting
+					red_img= copy.copy(snap)
+					for i in range(red_img.shape[0]):
+						for j in range(red_img.shape[1]):
+							red_img[i, j]= [0, 0, 255]
+					#cv2.imshow('debug', red_img)
+				else:
+					cdiff= cv2.bitwise_xor(cdiff, diff)
+				#cv2.imshow('All Shots', cdiff)
+				# create a combined image with shot highlighted
+				combined= cv2.bitwise_and(snap, snap, mask= ~diff)
+				cv2.bitwise_or(combined, red_img, combined, mask= diff)
+				cv2.imshow('This Shot', combined)
+			if chr(cv2.waitKey(0) & 0xff).upper() == 'Q':
+				break
+			sequence += 1
+			prev= copy.copy(snap)
+		cv2.destroyAllWindows()
+		current += 1
+		continue
+
 	if command == 'CONFIG':
 		print '  Camera config:'
-		camera.print_config()
+		stat, info= camera.print_config()
+		if not stat:
+			print '    Failed!', info
+			exit(True)
 		current += 1
 		continue
 

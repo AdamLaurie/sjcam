@@ -26,6 +26,7 @@ Running the script with no arguments will show a help screen:
 
     Commands:
 
+       BLAM                                   BlamCam mode - detect bullet hits on target (auto switch to PHOTO mode)
        CONFIG                                 Show camera config and status
        DATE <YYYY-MM-DD>                      Set camera date
        DEBUG <OFF | ON>                       Set DEBUG printing
@@ -39,7 +40,7 @@ Running the script with no arguments will show a help screen:
        PREVIEW                                View low-res PHOTO preview image (auto switch to PHOTO mode)
        SET <PARAMETER> <VALUE>                Set camera config ('?' to list parameters and/or values)
        START                                  START MOVIE recording (auto switch to MOVIE mode)
-       STOP                                   STOP MOVIE recording
+       STOP                                   STOP MOVIE recording or TIMED PHOTO
        SYNC                                   Synchronise camera clock & date with host
        [G|V]SNAP                              Take a snapshot and optionally [V]iew and/or [G]et it (auto switch to PHOTO mode)
        SSID <SSID>                            Set WiFi SSID (will not take effect until disconnect/reconnect)
@@ -160,6 +161,10 @@ will immediately wipe your SD card. Use with caution!
 
       MOVIE:
 
+# BlamCam mode
+
+BlamCam mode was the main reason for writing this code in the first place. The idea is that you place the camera in front of a target, then monitor it from the firing point. The camera on its own would be very useful for this, but with a bit of image processing it can be even more so. Accordingly, in this mode, each time you press a key a new image is taken and compared to the last. The difference should be the most recent shot, which will be highlighted.
+
 # known issues / further development
 
 Since there is no published API for this type of camera, it was reverse engineered by sniffing packets from the Android app. Not all settings visible on the camera can be changed from the app, so some things are still unknown or may be incorrect.
@@ -184,3 +189,6 @@ Need to add GET option to video start/stop...
 
 Need to fix camera directory to show file sizes, dates etc. (strange problem with BS4)
 
+Find better lens options for BlamCam (in progress)
+
+Really really need a better GUI for BlamCam!

@@ -15,6 +15,7 @@ import requests
 from xml.etree import ElementTree
 from bs4 import BeautifulSoup
 import subprocess
+import math
 
 # todo:
 # command 3027 gets random number? - e.g. returns <Value>89770999</Value>
@@ -61,6 +62,7 @@ class camera:
 	COMMANDS= 	{
 			'CONFIG':'3014',
 			'DATE':'3005',
+			'DISK_SPACE':'3017',
 			'MODE_PHOTO_MOVIE':'3001',
 			'SNAP':'1001',
 			'START_STOP':'2001',
@@ -76,6 +78,15 @@ class camera:
 				return conf
 		return None
 
+	def get_disk_space(self):
+		ret, info= self.send_command('DISK_SPACE')
+		if not ret:
+			return ret, info
+		space= self.get_element(info, 'Value')
+		if space:
+			return True, int(space)
+		return False, 0
+
 	def get_file(self, path, f):
 		r= requests.get("http://" + self.ip + f, stream=True)
 		fname= f.split('/')[-1:][0]
@@ -88,7 +99,7 @@ class camera:
 	def get_mode(self):
 		ret, info= self.send_command('STATUS_MODE')
 		if ret:
-			return True, self.get_status(info)
+			return True, self.get_element(info, 'Status')
 		else:
 			return False, info
 
@@ -110,11 +121,11 @@ class camera:
 		r.close()
 		return True, data
 
-	# extract a single status value from response to 'send_command'
-	def get_status(self, response):
+	# extract a single element from response to 'send_command'
+	def get_element(self, response, element):
 		tree= ElementTree.fromstring(response.text)
 		try:
-			return tree.find('Status').text
+			return tree.find(element).text
 		except:
 			return None
 
@@ -161,9 +172,8 @@ class camera:
 					except:
 						print '    %s:' % branch.text,
 		else:
-			print "    Couldn't read config!"
-			return False
-		return True
+			return False, "Couldn't read config!"
+		return True, None
 
 	def print_directory(self):
 		for thing in "PHOTO", "MOVIE":
@@ -191,6 +201,17 @@ class camera:
 					continue
 				#print f
 				print '     ', f.get('href')
+		print
+		print '    SD Card space remaining:',
+		ret, sd= self.get_disk_space()
+		if not ret:
+			return ret, sd
+		if sd == 0:
+			print 'None!'
+		else:
+			units= ['B','KB','MB','GB','TB','PB','EB','ZB','YB']
+			p= math.floor(math.log(sd, 2)/10)
+			print "%.2f%s" % (sd / math.pow(1024, p), units[int(p)])
 		
 
 	# send command by name or number
