@@ -72,11 +72,13 @@ def main():
 				print '      OK'
 			print '      Viewing target - hit SPACE in image window after each shot (Q to quit)'
 			print '        Review shots with the following keys:'
-			print '          SPACE - Resume shooting (take shot first)'
+			print '          A - All'
+			print '          C - Clear'
 			print '          F - First'
 			print '          L - Last'
 			print '          N - Next'
 			print '          P - Previous'
+			print '          SPACE - Resume shooting (take shot first)'
 			snap= []
 			prev= []
 			mask= []
@@ -86,6 +88,7 @@ def main():
 			diff= None
 			live= True
 			quit= False
+			highlight_all= False
 			cv2.namedWindow('This Shot', cv2.WINDOW_NORMAL)
 			while not quit:
 				win= 'Shot %02d' % sequence
@@ -112,36 +115,65 @@ def main():
 				# wait for keystroke
 				while 42:
 					key= chr(cv2.waitKey(0) & 0xff).upper()
-					if key == 'Q':
-						quit= True
-						break
+					# clear highlighted windows if required
+					if highlight_all:
+						for x in range(1, len(snap)):
+							cv2.imshow('Shot %02d' % x, snap[x])
+						highlight_all= False
+					# all
+					if key == 'A':
+						live= False
+						highlight_all= True
+						cv2.imshow(win, snap[sequence])
+						for x in range(1, len(snap)):
+							do_highlight(snap[x], mask[x - 1], window= 'Shot %02d' % x)
+						# show all shots in highlight window
+						do_highlight(snap[seq_max], mask, show_all= True)
+						continue
+					# clear
+					elif key == 'C':
+						sequence= seq_max
+						highlight(snap[sequence], prev[sequence - 1])
+						continue
+					# first
 					elif key == 'F':
 						live= False
 						cv2.imshow(win, snap[sequence])
 						sequence= 1
 						break
+					# last
 					elif key == 'L':
 						live= False
 						cv2.imshow(win, snap[sequence])
 						sequence= seq_max
 						break
+					# next
 					elif key == 'N':
 						live= False
 						cv2.imshow(win, snap[sequence])
 						if sequence < seq_max:
 							sequence += 1
 						break
+					# previous
 					elif key == 'P':
 						live= False
 						if sequence >= 2:
 							cv2.imshow(win, snap[sequence])
 							sequence -= 1
 						break
-					else:
+					# quit
+					elif key == 'Q':
+						quit= True
+						break
+					# take another shot
+					elif key == ' ':
 						live= True
 						cv2.imshow(win, snap[sequence])
 						sequence= seq_max
 						break
+					# do nothing - wrong key press
+					else:
+						continue
 				if live:
 					prev.append(copy.copy(snap[sequence]))
 					sequence += 1
@@ -471,7 +503,7 @@ def highlight(snap, prev, window= 'This Shot'):
 	do_highlight(snap, diff, window)
 	return diff
 
-def do_highlight(snap, mask, window= 'This Shot'):
+def do_highlight(snap, mask, window= 'This Shot', show_all= False):
 	global Red_Img
 
 	if Red_Img == None:
@@ -480,6 +512,13 @@ def do_highlight(snap, mask, window= 'This Shot'):
 		for i in range(Red_Img.shape[0]):
 			for j in range(Red_Img.shape[1]):
 				Red_Img[i, j]= [0, 0, 255]
+
+	# special case where we want to combine multiple masks, so the whole array is passed
+	if show_all:
+		mask_all= copy.copy(mask[0])
+		for x in range(1, len(mask)):
+			cv2.bitwise_or(mask_all, mask[x], mask_all)
+		mask= mask_all
 
 	# create a combined image with shot highlighted
 	combined= cv2.bitwise_and(snap, snap, mask= ~mask)
