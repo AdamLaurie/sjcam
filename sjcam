@@ -15,6 +15,8 @@ import cv2
 import numpy
 import copy
 
+Red_Img= None
+
 if len(sys.argv) == 1:
 	print
 	print 'Usage: %s <COMMAND> [ARG(s)] [<COMMAND> [ARG(s)] ...]' % sys.argv[0]
@@ -46,384 +48,443 @@ if len(sys.argv) == 1:
 	print
 	exit(True)
 
-camera= sj4000.camera()
-current= 1
-filepath= './'
+def main():
+	camera= sj4000.camera()
+	current= 1
+	filepath= './'
 
-while current < len(sys.argv):
-	print
-	command= sys.argv[current].upper()
-
-	if command == 'BLAM':
-		print '  Entering BlamCam mode'
-		stat, info= camera.get_mode()
-		if not stat:
-			print '    Failed!', info
-			exit(True)
-		if info != camera.MODE_PHOTO:
-			print '    Setting PHOTO mode'
-			stat, info= camera.set_mode('PHOTO')
-			if not stat:
-				print '      Failed!', info
-				exit(True)
-			print '      OK'
-		print '      Viewing target - hit any key in image window after each shot (Q to quit)'
-		sequence= 0
-		prev= None
-		cdiff= None
-		diff= None
-		combined= None
-		#cv2.namedWindow('All Shots', cv2.WINDOW_NORMAL)
-		#cv2.namedWindow('Last Shot', cv2.WINDOW_NORMAL)
-		cv2.namedWindow('This Shot', cv2.WINDOW_NORMAL)
-		#cv2.namedWindow('debug', cv2.WINDOW_NORMAL)
-		while 42:
-			stat, fname= camera.snap(filepath)
-			if not stat:
-				print '    Failed!', data
-				exit(True)
-			snap= cv2.imread(filepath + fname)
-			snap= cv2.resize(snap, (480,640))
-			cv2.namedWindow('Shot %02d' % sequence, cv2.WINDOW_NORMAL)
-			cv2.imshow('Shot %02d' % sequence, snap)
-			if prev != None:
-				diff= cv2.subtract(prev, snap)
-				# remove noise
-				diff= cv2.medianBlur(diff, 9)
-				# convert to greyscale so we can apply threshold
-				diff= cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-				# apply threshold so we have a b&w image we can use as a mask
-                                diff= cv2.threshold(diff, 10, 255, cv2.THRESH_BINARY)[1]
-				#cv2.imshow('Last Shot', diff)
-				if cdiff == None:
-					cdiff= copy.copy(diff)
-					# create a solid red image of the same size as original to be used for highlighting
-					red_img= copy.copy(snap)
-					for i in range(red_img.shape[0]):
-						for j in range(red_img.shape[1]):
-							red_img[i, j]= [0, 0, 255]
-					#cv2.imshow('debug', red_img)
-				else:
-					cdiff= cv2.bitwise_xor(cdiff, diff)
-				#cv2.imshow('All Shots', cdiff)
-				# create a combined image with shot highlighted
-				combined= cv2.bitwise_and(snap, snap, mask= ~diff)
-				cv2.bitwise_or(combined, red_img, combined, mask= diff)
-				cv2.imshow('This Shot', combined)
-			if chr(cv2.waitKey(0) & 0xff).upper() == 'Q':
-				break
-			sequence += 1
-			prev= copy.copy(snap)
-		cv2.destroyAllWindows()
-		current += 1
-		continue
-
-	if command == 'CONFIG':
-		print '  Camera config:'
-		stat, info= camera.print_config()
-		if not stat:
-			print '    Failed!', info
-			exit(True)
-		current += 1
-		continue
-
-	if command == 'DATE':
-		current += 1
-		print '  Setting DATE to', sys.argv[current]
-		stat, info= camera.set_date(sys.argv[current])
-		if not stat:
-			print '    Failed!', info
-			exit(True)
-		print '    OK'
-		current += 1
-		continue
-		
-	if command == 'DEBUG':
-		current += 1
-		arg= sys.argv[current].upper()
-		print '  Setting DEBUG to', arg
-		if arg == 'ON':
-			camera.DEBUG= True
-		elif arg == 'OFF':
-			camera.DEBUG= False
-		else:
-			print '    Failed! Invalid setting:', arg
-			exit(True)
-		print '    OK'
-		current += 1
-		continue
-
-	if command == 'DIR':
-		print '  Camera directory:'
-		camera.print_directory()
-		current += 1
-		continue
-
-	if command == 'GET':
-		current += 1
-		print '  Getting', sys.argv[current]
-		stat, fname= camera.get_file(filepath, sys.argv[current])
-		if stat:
-			print '    Saved to:', filepath + fname
-		else:
-			print '    Failed!', fname
-			exit(True)
-		current += 1
-		continue
-
-	if command == 'IP':
-		current += 1
-		print '  Set IP to:',
-		try:
-			camera.ip= sys.argv[current]
-		except:
-			print 'Failed! Missing IP ADDRESS.'
-			exit(True)
-		print camera.ip
-		current += 1
-		continue
-
-	if command == 'MODE':
-		print '  Setting MODE:',
-		current += 1
-		try:
-			mode= sys.argv[current].upper()
-		except:
-			print 'Failed! Missing MODE.'
-			exit(True)
-		print mode
-		stat, info= camera.set_mode(mode)
-		if not stat:
-			print '    Failed!', info
-			exit(True)
-		print '    OK'
-		current += 1
-		continue
-
-	if command == 'PASS':
-		current += 1
-		print '  Setting PASSWORD to', sys.argv[current]
-		if len(sys.argv[current]) < 8:
-			print '    Failed! PASSWORD must be at least 8 characters'
-			exit(True)
-		stat, info= camera.set_wifi_pw(sys.argv[current])
-		if not stat:
-			print '    Failed!', info
-			exit(True)
-		print '    OK'
-		current += 1
-		continue
-		
-	if command == 'PATH':
-		current += 1
-		print '  Setting PATH to', sys.argv[current]
-		filepath= sys.argv[current]
-		current += 1
-		continue
-
-	if command == 'PING':
-		print '  Sending network PING to', camera.ip
-		print '   ', camera.ping()
+	while current < len(sys.argv):
 		print
-		print '  Testing HTTP socket on', camera.ip
-		print '   ', camera.http_test()
-		current += 1
-		continue
+		command= sys.argv[current].upper()
 
-	if command == 'PREVIEW':
-		print '  Getting PREVIEW image'
-		stat, info= camera.get_mode()
-		if not stat:
-			print '    Failed!', info
-			exit(True)
-		if info != camera.MODE_PHOTO:
-			print '    Setting PHOTO mode'
-			stat, info= camera.set_mode('PHOTO')
+		if command == 'BLAM':
+			print '  Entering BlamCam mode'
+			stat, info= camera.get_mode()
 			if not stat:
-				print '      Failed!', info
+				print '    Failed!', info
 				exit(True)
-			print '      OK'
-		stat, data= camera.get_preview()
-		if not stat:
-			print '    Failed!', data
-		print '      Viewing preview - hit any key in image window to close'
-		nparray= numpy.fromstring(data, numpy.uint8)
-		preview= cv2.imdecode(nparray, cv2.CV_LOAD_IMAGE_UNCHANGED)
-		cv2.namedWindow('Preview', cv2.WINDOW_NORMAL)
-		cv2.imshow('Preview', preview)
-		cv2.waitKey(0)
-		cv2.destroyAllWindows()
-		current += 1
-		continue
-
-	if command == 'SET':
-		current += 1
-		try:
-			if sys.argv[current] == '?':
-				param= None
-			else:
-				param= sys.argv[current]
+			if info != camera.MODE_PHOTO:
+				print '    Setting PHOTO mode'
+				stat, info= camera.set_mode('PHOTO')
+				if not stat:
+					print '      Failed!', info
+					exit(True)
+				print '      OK'
+			print '      Viewing target - hit SPACE in image window after each shot (Q to quit)'
+			print '        Review shots with the following keys:'
+			print '          SPACE - Resume shooting (take shot first)'
+			print '          F - First'
+			print '          L - Last'
+			print '          N - Next'
+			print '          P - Previous'
+			snap= []
+			prev= []
+			mask= []
+			sequence= 0
+			seq_max= 0
+			border= 2
+			diff= None
+			live= True
+			quit= False
+			cv2.namedWindow('This Shot', cv2.WINDOW_NORMAL)
+			while not quit:
+				win= 'Shot %02d' % sequence
+				if live:
+					stat, fname= camera.snap(filepath)
+					if not stat:
+						print '    Failed!', data
+						exit(True)
+					snap.append(cv2.imread(filepath + fname))
+					#snap[sequence]= cv2.resize(snap[sequence], (480,640))
+					cv2.namedWindow(win, cv2.WINDOW_NORMAL)
+					# create border so we know which image we're looking at
+					# todo: fix this - currently disabled as it doesn't work as per docco
+					#display= cv2.copyMakeBorder(snap[sequence], border, border, border, border, cv2.BORDER_CONSTANT, value= cv2.cv.Scalar([0, 0, 255]))
+					cv2.imshow(win, snap[sequence])
+				if len(prev) > 0:
+					if live:
+						mask.append(highlight(snap[sequence], prev[sequence - 1]))
+					else:
+						# highlight shot in shot's own window
+						highlight(snap[sequence], prev[sequence - 1], window= win)
+						# highlight shot on latest pic (i.e. see it in-situ)
+						do_highlight(snap[seq_max], mask[sequence - 1])
+				# wait for keystroke
+				while 42:
+					key= chr(cv2.waitKey(0) & 0xff).upper()
+					if key == 'Q':
+						quit= True
+						break
+					elif key == 'F':
+						live= False
+						cv2.imshow(win, snap[sequence])
+						sequence= 1
+						break
+					elif key == 'L':
+						live= False
+						cv2.imshow(win, snap[sequence])
+						sequence= seq_max
+						break
+					elif key == 'N':
+						live= False
+						cv2.imshow(win, snap[sequence])
+						if sequence < seq_max:
+							sequence += 1
+						break
+					elif key == 'P':
+						live= False
+						if sequence >= 2:
+							cv2.imshow(win, snap[sequence])
+							sequence -= 1
+						break
+					else:
+						live= True
+						cv2.imshow(win, snap[sequence])
+						sequence= seq_max
+						break
+				if live:
+					prev.append(copy.copy(snap[sequence]))
+					sequence += 1
+					seq_max += 1
+			cv2.destroyAllWindows()
 			current += 1
-			if sys.argv[current] == '?':
-				val= None
-			else:
-				val= sys.argv[current]
-		except:
-			print '    Missing argument(s) to SET!'
-			exit(True)
-		if not param or not val:
-			print '  SET config help:'
-			print
-			camera.print_config_help(param)
-		else:
-			print '  Setting', param, 'to', val
-			stat, info= camera.set_config(param, val)
+			continue
+
+		if command == 'CONFIG':
+			print '  Camera config:'
+			stat, info= camera.print_config()
+			if not stat:
+				print '    Failed!', info
+				exit(True)
+			current += 1
+			continue
+
+		if command == 'DATE':
+			current += 1
+			print '  Setting DATE to', sys.argv[current]
+			stat, info= camera.set_date(sys.argv[current])
 			if not stat:
 				print '    Failed!', info
 				exit(True)
 			print '    OK'
-		current += 1
-		continue
+			current += 1
+			continue
 
-	if command == 'VGSNAP' or command == 'GVSNAP':
-		command= 'VSNAP'
-	if command == 'SNAP' or command == 'GSNAP' or command == 'VSNAP':
-		print '  Taking snapshot'
-		stat, info= camera.get_mode()
-		if not stat:
-			print '    Failed!', info
-			exit(True)
-		if info != camera.MODE_PHOTO and info != camera.MODE_TPHOTO:
-			print '    Setting PHOTO mode'
-	                stat, info= camera.set_mode('PHOTO')
-        	        if not stat:
-                	        print '      Failed!', info
-                        	exit(True)
-			print '      OK'
-		if command == 'GSNAP' or command == 'VSNAP':
-			stat, fname= camera.snap(filepath)
-		else:
-			stat, fname= camera.snap(None)
-		if not stat:
-			print '    Failed!', fname
-			exit(True)
-		print '    Image captured:', fname
-		if command == 'GSNAP' or command == 'VSNAP':
-			print '      Saved to:', filepath + fname
-		if command == 'VSNAP': 
-			print '      Viewing image - hit any key in image window to close'
-			snap= cv2.imread(filepath + fname)
-			cv2.namedWindow('Snapshot %s' % fname, cv2.WINDOW_NORMAL)
-			cv2.imshow('Snapshot %s' % fname, snap)
+		if command == 'DEBUG':
+			current += 1
+			arg= sys.argv[current].upper()
+			print '  Setting DEBUG to', arg
+			if arg == 'ON':
+				camera.DEBUG= True
+			elif arg == 'OFF':
+				camera.DEBUG= False
+			else:
+				print '    Failed! Invalid setting:', arg
+				exit(True)
+			print '    OK'
+			current += 1
+			continue
+
+		if command == 'DIR':
+			print '  Camera directory:'
+			camera.print_directory()
+			current += 1
+			continue
+
+		if command == 'GET':
+			current += 1
+			print '  Getting', sys.argv[current]
+			stat, fname= camera.get_file(filepath, sys.argv[current])
+			if stat:
+				print '    Saved to:', filepath + fname
+			else:
+				print '    Failed!', fname
+				exit(True)
+			current += 1
+			continue
+
+		if command == 'IP':
+			current += 1
+			print '  Set IP to:',
+			try:
+				camera.ip= sys.argv[current]
+			except:
+				print 'Failed! Missing IP ADDRESS.'
+				exit(True)
+			print camera.ip
+			current += 1
+			continue
+
+		if command == 'MODE':
+			print '  Setting MODE:',
+			current += 1
+			try:
+				mode= sys.argv[current].upper()
+			except:
+				print 'Failed! Missing MODE.'
+				exit(True)
+			print mode
+			stat, info= camera.set_mode(mode)
+			if not stat:
+				print '    Failed!', info
+				exit(True)
+			print '    OK'
+			current += 1
+			continue
+
+		if command == 'PASS':
+			current += 1
+			print '  Setting PASSWORD to', sys.argv[current]
+			if len(sys.argv[current]) < 8:
+				print '    Failed! PASSWORD must be at least 8 characters'
+				exit(True)
+			stat, info= camera.set_wifi_pw(sys.argv[current])
+			if not stat:
+				print '    Failed!', info
+				exit(True)
+			print '    OK'
+			current += 1
+			continue
+
+		if command == 'PATH':
+			current += 1
+			print '  Setting PATH to', sys.argv[current]
+			filepath= sys.argv[current]
+			current += 1
+			continue
+
+		if command == 'PING':
+			print '  Sending network PING to', camera.ip
+			print '   ', camera.ping()
+			print
+			print '  Testing HTTP socket on', camera.ip
+			print '   ', camera.http_test()
+			current += 1
+			continue
+
+		if command == 'PREVIEW':
+			print '  Getting PREVIEW image'
+			stat, info= camera.get_mode()
+			if not stat:
+				print '    Failed!', info
+				exit(True)
+			if info != camera.MODE_PHOTO:
+				print '    Setting PHOTO mode'
+				stat, info= camera.set_mode('PHOTO')
+				if not stat:
+					print '      Failed!', info
+					exit(True)
+				print '      OK'
+			stat, data= camera.get_preview()
+			if not stat:
+				print '    Failed!', data
+			print '      Viewing preview - hit any key in image window to close'
+			nparray= numpy.fromstring(data, numpy.uint8)
+			preview= cv2.imdecode(nparray, cv2.CV_LOAD_IMAGE_UNCHANGED)
+			cv2.namedWindow('Preview', cv2.WINDOW_NORMAL)
+			cv2.imshow('Preview', preview)
 			cv2.waitKey(0)
 			cv2.destroyAllWindows()
-		current += 1
-		continue
+			current += 1
+			continue
 
-	if command == 'SSID':
-		current += 1
-		print '  Setting SSID to', sys.argv[current]
-		stat, info= camera.set_wifi_name(sys.argv[current])
-		if not stat:
-			print '    Failed!', info
-			exit(True)
-		print '    OK'
-		current += 1
-		continue
-		
-	if command == 'START':
-		print '  Starting MOVIE recording'
-		stat, mode= camera.get_mode()
-		if not stat:
-			print '    Failed!', info
-			exit(True)
-		if mode != camera.MODE_MOVIE and mode != camera.MODE_TMOVIE:
-			print '    Setting MOVIE mode'
-			stat, info= camera.set_mode('MOVIE')
+		if command == 'SET':
+			current += 1
+			try:
+				if sys.argv[current] == '?':
+					param= None
+				else:
+					param= sys.argv[current]
+				current += 1
+				if sys.argv[current] == '?':
+					val= None
+				else:
+					val= sys.argv[current]
+			except:
+				print '    Missing argument(s) to SET!'
+				exit(True)
+			if not param or not val:
+				print '  SET config help:'
+				print
+				camera.print_config_help(param)
+			else:
+				print '  Setting', param, 'to', val
+				stat, info= camera.set_config(param, val)
+				if not stat:
+					print '    Failed!', info
+					exit(True)
+				print '    OK'
+			current += 1
+			continue
+
+		if command == 'VGSNAP' or command == 'GVSNAP':
+			command= 'VSNAP'
+		if command == 'SNAP' or command == 'GSNAP' or command == 'VSNAP':
+			print '  Taking snapshot'
+			stat, info= camera.get_mode()
+			if not stat:
+				print '    Failed!', info
+				exit(True)
+			if info != camera.MODE_PHOTO and info != camera.MODE_TPHOTO:
+				print '    Setting PHOTO mode'
+				stat, info= camera.set_mode('PHOTO')
 			if not stat:
 				print '      Failed!', info
 				exit(True)
-			print '      OK'
-		stat, info= camera.start_stop_movie(camera.START)
-		if stat:
-			print '    OK'
-		else:
-			print '    Failed!', info
-			exit(True)
-		current += 1
-		continue
-
-	if command == 'STOP':
-		stat, mode= camera.get_mode()
-		if not stat:
-			print '  STOP failed!', mode
-		if mode == camera.MODE_TPHOTO:
-			print '  Stopping TIMED PHOTO'
-			stat, fname= camera.snap(None)
+				print '      OK'
+			if command == 'GSNAP' or command == 'VSNAP':
+				stat, fname= camera.snap(filepath)
+			else:
+				stat, fname= camera.snap(None)
 			if not stat:
 				print '    Failed!', fname
 				exit(True)
-			print '    Last image captured:', fname
-		else:
-			print '  Stopping MOVIE recording'
-			stat, info= camera.start_stop_movie(camera.STOP)
+			print '    Image captured:', fname
+			if command == 'GSNAP' or command == 'VSNAP':
+				print '      Saved to:', filepath + fname
+			if command == 'VSNAP': 
+				print '      Viewing image - hit any key in image window to close'
+				snap= cv2.imread(filepath + fname)
+				cv2.namedWindow('Snapshot %s' % fname, cv2.WINDOW_NORMAL)
+				cv2.imshow('Snapshot %s' % fname, snap)
+				cv2.waitKey(0)
+				cv2.destroyAllWindows()
+			current += 1
+			continue
+
+		if command == 'SSID':
+			current += 1
+			print '  Setting SSID to', sys.argv[current]
+			stat, info= camera.set_wifi_name(sys.argv[current])
+			if not stat:
+				print '    Failed!', info
+				exit(True)
+			print '    OK'
+			current += 1
+			continue
+
+		if command == 'START':
+			print '  Starting MOVIE recording'
+			stat, mode= camera.get_mode()
+			if not stat:
+				print '    Failed!', info
+				exit(True)
+			if mode != camera.MODE_MOVIE and mode != camera.MODE_TMOVIE:
+				print '    Setting MOVIE mode'
+				stat, info= camera.set_mode('MOVIE')
+				if not stat:
+					print '      Failed!', info
+					exit(True)
+				print '      OK'
+			stat, info= camera.start_stop_movie(camera.START)
 			if stat:
 				print '    OK'
 			else:
 				print '    Failed!', info
 				exit(True)
-		current += 1
-		continue
+			current += 1
+			continue
 
-	if command == 'STREAM':
-		print '  Initiating video stream'
-		stat, info= camera.get_mode()
-		if not stat:
-			print '    Failed!', info
-			exit(True)
-		if info != camera.MODE_MOVIE:
-			print '    Setting MOVIE mode'
-	                stat, info= camera.set_mode('MOVIE')
-        	        if not stat:
-                	        print '      Failed!', info
-                        	exit(True)
-			print '      OK'
-		camera.stream()
-		current += 1
-		continue
+		if command == 'STOP':
+			stat, mode= camera.get_mode()
+			if not stat:
+				print '  STOP failed!', mode
+			if mode == camera.MODE_TPHOTO:
+				print '  Stopping TIMED PHOTO'
+				stat, fname= camera.snap(None)
+				if not stat:
+					print '    Failed!', fname
+					exit(True)
+				print '    Last image captured:', fname
+			else:
+				print '  Stopping MOVIE recording'
+				stat, info= camera.start_stop_movie(camera.STOP)
+				if stat:
+					print '    OK'
+				else:
+					print '    Failed!', info
+					exit(True)
+			current += 1
+			continue
 
-	if command == 'SYNC':
-		now= datetime.now().isoformat(' ')
-		date= now.split(' ')[0]
-		print '  Setting DATE to', date
-		stat, info= camera.set_date(date)
-		if not stat:
-			print '    Failed!', info
-			exit(True)
-		print '    OK'
-		time= now.split(' ')[1].split('.')[0]
-		print '  Setting TIME to', time
-		stat, info= camera.set_time(time)
-		if not stat:
-			print '    Failed!', info
-			exit(True)
-		print '    OK'
-		current += 1
-		continue
+		if command == 'STREAM':
+			print '  Initiating video stream'
+			stat, info= camera.get_mode()
+			if not stat:
+				print '    Failed!', info
+				exit(True)
+			if info != camera.MODE_MOVIE:
+				print '    Setting MOVIE mode'
+				stat, info= camera.set_mode('MOVIE')
+				if not stat:
+					print '      Failed!', info
+					exit(True)
+				print '      OK'
+			camera.stream()
+			current += 1
+			continue
 
-	if command == 'TIME':
-		current += 1
-		print '  Setting TIME to', sys.argv[current]
-		stat, info= camera.set_time(sys.argv[current])
-		if not stat:
-			print '    Failed!', info
-			exit(True)
-		print '    OK'
-		current += 1
-		continue
-		
+		if command == 'SYNC':
+			now= datetime.now().isoformat(' ')
+			date= now.split(' ')[0]
+			print '  Setting DATE to', date
+			stat, info= camera.set_date(date)
+			if not stat:
+				print '    Failed!', info
+				exit(True)
+			print '    OK'
+			time= now.split(' ')[1].split('.')[0]
+			print '  Setting TIME to', time
+			stat, info= camera.set_time(time)
+			if not stat:
+				print '    Failed!', info
+				exit(True)
+			print '    OK'
+			current += 1
+			continue
+
+		if command == 'TIME':
+			current += 1
+			print '  Setting TIME to', sys.argv[current]
+			stat, info= camera.set_time(sys.argv[current])
+			if not stat:
+				print '    Failed!', info
+				exit(True)
+			print '    OK'
+			current += 1
+			continue
+
+		print
+		print 'Unrecognised command:', sys.argv[current]
+		exit(True)
 	print
-	print 'Unrecognised command:', sys.argv[current]
-	exit(True)
-print
-exit(False)
+	exit(False)
+
+def highlight(snap, prev, window= 'This Shot'):
+	diff= cv2.subtract(prev, snap)
+	# remove noise
+	diff= cv2.medianBlur(diff, 9)
+	# convert to greyscale so we can apply threshold
+	diff= cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+	# apply threshold so we have a b&w image we can use as a mask
+	diff= cv2.threshold(diff, 10, 255, cv2.THRESH_BINARY)[1]
+	do_highlight(snap, diff, window)
+	return diff
+
+def do_highlight(snap, mask, window= 'This Shot'):
+	global Red_Img
+
+	if Red_Img == None:
+		# create a solid red image of the same size as original to be used for highlighting
+		Red_Img= copy.copy(snap)
+		for i in range(Red_Img.shape[0]):
+			for j in range(Red_Img.shape[1]):
+				Red_Img[i, j]= [0, 0, 255]
+
+	# create a combined image with shot highlighted
+	combined= cv2.bitwise_and(snap, snap, mask= ~mask)
+	cv2.bitwise_or(combined, Red_Img, combined, mask= mask)
+	cv2.imshow(window, combined)
+
+main()
+

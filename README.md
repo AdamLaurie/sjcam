@@ -41,7 +41,7 @@ Running the script with no arguments will show a help screen:
        SET <PARAMETER> <VALUE>                Set camera config ('?' to list parameters and/or values)
        START                                  START MOVIE recording (auto switch to MOVIE mode)
        STOP                                   STOP MOVIE recording or TIMED PHOTO
-       SYNC                                   Synchronise camera clock & date with host
+       SYNC                                   Synchronise camera TIME & DATE with host
        [G|V]SNAP                              Take a snapshot and optionally [V]iew and/or [G]et it (auto switch to PHOTO mode)
        SSID <SSID>                            Set WiFi SSID (will not take effect until disconnect/reconnect)
        STREAM                                 View live video stream (auto switch to MOVIE mode)
@@ -181,7 +181,7 @@ Commands can be tested by sending them directly to the camera using a browser. F
 
   http://192.168.1.254/?custom=1&cmd=3003&str=%22MyShinySJ4000%22
 
-If you find any new or useful commands, please email me datails, or send me a pull request. I have commented some as yet unexplored options in sj4000.py
+If you find any new or useful commands, please email me details, or send me a pull request. I have commented some as yet unexplored options in sj4000.py
 
 At some point, it would be nice to have a GUI.
 
