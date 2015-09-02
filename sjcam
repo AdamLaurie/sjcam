@@ -114,7 +114,22 @@ def main():
 						do_highlight(snap[seq_max], mask[sequence - 1])
 				# wait for keystroke
 				while 42:
-					key= chr(cv2.waitKey(0) & 0xff).upper()
+					key= cv2.waitKey(0) & 0xff
+					# map arrow keys
+					# left -> Previous
+					if key == 81:
+						key= 'P'
+					# up -> Last
+					elif key == 82:
+						key= 'L'
+					# right -> Next
+					elif key == 83:
+						key= 'N'
+					# down -> First
+					elif key == 84:
+						key= 'F'
+					else:
+						key= chr(key).upper()
 					# clear highlighted windows if required
 					if highlight_all:
 						for x in range(1, len(snap)):
@@ -132,6 +147,7 @@ def main():
 						continue
 					# clear
 					elif key == 'C':
+						cv2.imshow(win, snap[sequence])
 						sequence= seq_max
 						highlight(snap[sequence], prev[sequence - 1])
 						continue
@@ -526,7 +542,11 @@ def do_highlight(snap, mask, window= 'This Shot', show_all= False):
 	# create a combined image with shot highlighted
 	combined= cv2.bitwise_and(snap, snap, mask= ~mask)
 	cv2.bitwise_or(combined, Red_Img, combined, mask= mask)
+	# draw a red line around window to show which shot we're looking at
+	if not window == "This Shot":
+		cv2.rectangle(combined, (0, 0), (combined.shape[1] - 1, combined.shape[0] - 1),(0, 0, 255), thickness= 8)
 	cv2.imshow(window, combined)
+
 
 main()
 
