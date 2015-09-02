@@ -496,6 +496,9 @@ def highlight(snap, prev, window= 'This Shot'):
 	diff= cv2.subtract(prev, snap)
 	# remove noise
 	diff= cv2.medianBlur(diff, 9)
+	# shrink mask to original size as blur will have made it larger
+	kernel= numpy.ones((3,3),numpy.uint8)
+	diff= cv2.erode(diff, kernel)
 	# convert to greyscale so we can apply threshold
 	diff= cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
 	# apply threshold so we have a b&w image we can use as a mask
