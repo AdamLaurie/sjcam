@@ -87,6 +87,14 @@ class camera:
 			return True, int(space)
 		return False, 0
 
+	# extract a single element from response to 'send_command'
+	def get_element(self, response, element):
+		tree= ElementTree.fromstring(response.text)
+		try:
+			return tree.find(element).text
+		except:
+			return None
+
 	def get_file(self, path, f):
 		r= requests.get("http://" + self.ip + f, stream=True)
 		fname= f.split('/')[-1:][0]
@@ -95,6 +103,17 @@ class camera:
 		outfile.close()
 		r.close()
 		return True, fname
+
+	# return file length and creation date/time from html table
+	def get_file_details(self, cells, filename):
+		for x in range(len(cells)):
+			try:
+				entry= cells[x].findChildren('a')[0].get('href')
+			except:
+				continue
+			if entry == filename:
+				return cells[x+1].string.strip(), cells[x+2].string.strip().split(' ')[0], cells[x+2].string.strip().split(' ')[1]
+		return None, None, None
 
 	def get_mode(self):
 		ret, info= self.send_command('STATUS_MODE')
@@ -120,14 +139,6 @@ class camera:
 		data= r.raw.read(size)
 		r.close()
 		return True, data
-
-	# extract a single element from response to 'send_command'
-	def get_element(self, response, element):
-		tree= ElementTree.fromstring(response.text)
-		try:
-			return tree.find(element).text
-		except:
-			return None
 
 	def http_test(self):
 		try:
@@ -177,30 +188,30 @@ class camera:
 
 	def print_directory(self):
 		for thing in "PHOTO", "MOVIE":
+			print
+			print '    %s:' % thing
+			print
 			try:
 				resp= requests.get("http://" + self.ip + "/DCIM/%s" % thing, timeout= 5)
 			except:
 				return False, 'Timeout!'
 			if resp.status_code != 200:
 				return False, resp
-			soup= BeautifulSoup(resp.text, 'html.parser')
-			# fixme: we should be able to parse the directory listing better...
-			#table= soup.find('table')
-			#for row in table.find_all('tr'):
-				#print row
-			#	for cell in row.find_all('td'):
-			#		print cell
-			print
-			print '    %s:' % thing
-			print
-			# every second link is a delete ref
-			count= 0
-			for f in soup.find_all('a'):
-				count += 1
-				if not count % 2:
-					continue
-				#print f
-				print '     ', f.get('href')
+			soup= BeautifulSoup(resp.text)
+			try:
+				table= soup.findChildren('table')[0]
+			except:
+				break
+			rows= table.findChildren(['tr'])
+			for row in rows:
+				cells= row.findChildren('td')
+				for cell in cells:
+					if cell.findChildren('a'):
+						entry= cell.findChildren('a')[0].get('href')
+						if entry.find('del') > 0:
+							continue
+						fsize, fdate, ftime= self.get_file_details(cells, entry)
+						print '      %s    % 10.10s    %s    %s' % (entry, fsize, fdate, ftime)
 		print
 		print '    SD Card space remaining:',
 		ret, sd= self.get_disk_space()

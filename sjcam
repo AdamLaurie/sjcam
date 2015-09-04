@@ -100,9 +100,6 @@ def main():
 					snap.append(cv2.imread(filepath + fname))
 					#snap[sequence]= cv2.resize(snap[sequence], (480,640))
 					cv2.namedWindow(win, cv2.WINDOW_NORMAL)
-					# create border so we know which image we're looking at
-					# todo: fix this - currently disabled as it doesn't work as per docco
-					#display= cv2.copyMakeBorder(snap[sequence], border, border, border, border, cv2.BORDER_CONSTANT, value= cv2.cv.Scalar([0, 0, 255]))
 					cv2.imshow(win, snap[sequence])
 				if len(prev) > 0:
 					if live:
