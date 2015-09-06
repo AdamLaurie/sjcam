@@ -11,6 +11,7 @@
 # and it will stop talking to you. power on/off is the only recourse!
 
 import os
+import sys
 import requests
 from xml.etree import ElementTree
 from bs4 import BeautifulSoup
@@ -96,10 +97,21 @@ class camera:
 			return None
 
 	def get_file(self, path, f):
+		ret, flen= self.print_directory(quiet= True, find= f)
+		if not ret:
+			return False, "Could not read directory"
+		if not flen:
+			return False, "Could not get file length"
 		r= requests.get("http://" + self.ip + f, stream=True)
 		fname= f.split('/')[-1:][0]
 		outfile= open(path + fname, "wb")
-		outfile.write(r.content)
+		gotlen= 0
+		for chunk in r.iter_content(chunk_size= 2048 * 1024):
+			if chunk: # filter out keep-alive new chunks
+				gotlen += len(chunk)
+				print '    %s of %s    \r' % (self.human_readable(gotlen), flen),
+				sys.stdout.flush()
+				outfile.write(chunk)
 		outfile.close()
 		r.close()
 		return True, fname
@@ -149,6 +161,11 @@ class camera:
 			return 'HTTP socket OPEN'
 		return 'HTTP socket open but returned: %d' % resp.status_code
 
+	def human_readable(self, num):
+		units= ['B','KB','MB','GB','TB','PB','EB','ZB','YB']
+		p= math.floor(math.log(num, 2)/10)
+		return "%.2f %s" % (num / math.pow(1024, p), units[int(p)])
+
 	def ping(self):
 		ret= subprocess.Popen(["ping", "-c1", "-W 1", self.ip],stdout= subprocess.PIPE).communicate()[0]
 		if ret.find(' 0%') >= 0:
@@ -186,11 +203,12 @@ class camera:
 			return False, "Couldn't read config!"
 		return True, None
 
-	def print_directory(self):
+	def print_directory(self, quiet= False, find= None):
 		for thing in "PHOTO", "MOVIE":
-			print
-			print '    %s:' % thing
-			print
+			if not quiet:
+				print
+				print '    %s:' % thing
+				print
 			try:
 				resp= requests.get("http://" + self.ip + "/DCIM/%s" % thing, timeout= 5)
 			except:
@@ -211,19 +229,20 @@ class camera:
 						if entry.find('del') > 0:
 							continue
 						fsize, fdate, ftime= self.get_file_details(cells, entry)
-						print '      %s    % 10.10s    %s    %s' % (entry, fsize, fdate, ftime)
-		print
-		print '    SD Card space remaining:',
-		ret, sd= self.get_disk_space()
-		if not ret:
-			return ret, sd
-		if sd == 0:
-			print 'None!'
-		else:
-			units= ['B','KB','MB','GB','TB','PB','EB','ZB','YB']
-			p= math.floor(math.log(sd, 2)/10)
-			print "%.2f%s" % (sd / math.pow(1024, p), units[int(p)])
-		
+						if find == entry:
+							return True, fsize
+						if not quiet:
+							print '      %s    % 10.10s    %s    %s' % (entry, fsize, fdate, ftime)
+		if not quiet:
+			print
+			print '    SD Card space remaining:',
+			ret, sd= self.get_disk_space()
+			if not ret:
+				return ret, sd
+			if sd == 0:
+				print 'None!'
+			else:
+				print self.human_readable(sd)
 
 	# send command by name or number
 	def send_command(self, command, param= None, str_param= None):
