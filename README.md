@@ -4,13 +4,15 @@ A python CLI tool for controlling SJCAM WiFi Sports Cameras
 
 # installation
 
-As far as I know, the only dependancy not catered for by the installation script is VideoLAN, used for viewing a live stream from the camera. To install under Ubuntu:
+As far as I know, the only dependancies not catered for by the installation script are VideoLAN, used for viewing a live stream from the camera and opencv. To install under Ubuntu:
 
-  sudo apt-get install vlc
+  sudo apt-get install vlc python-opencv
 
-For other ditros, visit the home page for more info:
+For other ditros, visit the home pages for more info:
 
   http://www.videolan.org/
+
+  http://opencv.org/
 
 To install sjcam:
 
