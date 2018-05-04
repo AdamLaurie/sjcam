@@ -167,6 +167,8 @@ will immediately wipe your SD card. Use with caution!
 
 BlamCam mode was the main reason for writing this code in the first place. The idea is that you place the camera in front of a target, then monitor it from the firing point. The camera on its own would be very useful for this, but with a bit of image processing it can be even more so. Accordingly, in this mode, each time you press a key a new image is taken and compared to the last. The difference should be the most recent shot, which will be highlighted. You can also review previous shots at any time, which will highlight each shot in situ on the current target image.
 
+![BlamCam](/images/blamcam.jpg)
+
 # known issues / further development
 
 Since there is no published API for this type of camera, it was reverse engineered by sniffing packets from the Android app. Not all settings visible on the camera can be changed from the app, so some things are still unknown or may be incorrect.
