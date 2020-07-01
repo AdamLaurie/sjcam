@@ -215,7 +215,7 @@ class camera:
 				return False, 'Timeout!'
 			if resp.status_code != 200:
 				return False, resp
-			soup= BeautifulSoup(resp.text)
+			soup= BeautifulSoup(resp.text, features="lxml")
 			try:
 				table= soup.findChildren('table')[0]
 			except:
